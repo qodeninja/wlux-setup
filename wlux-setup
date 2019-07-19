@@ -410,10 +410,10 @@
 			err="Cannot link rcfile"
 		fi
 
-		if fx_download "$FX_SETUP_URL" "$LUX_BIN/fx-setup"; then
-			info "FX-SETUP installed to $LUX_BIN"
+		if fx_download "$LUX_SETUP_URL" "$LUX_BIN/wlux-setup"; then
+			info "WLUX-SETUP installed to $LUX_BIN"
 		else
-			err="Cannot download fx-setup, try again!"
+			err="Cannot download wlux-setup, try again!"
 		fi
 
 		if fx_download "$FX_UTIL_URL" "$LUX_BIN/fx"; then
