@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+##name:wlux-setup
+##version:v0.9.9-xxx
+##updated:Thu 2019-07-18 08:10 PM
 ##==============================================================================
 ##------------------------------------------------------------------------------
 
@@ -30,9 +33,9 @@
 	x=$(tput sgr0)
 	eol="$(tput el)"
 	bld="$(tput bold)"
-	line="##---------------$nl"
 	tab=$'\t'
 	nl=$'\n'
+	line="##---------------$nl"
 	delta="${orange}\xE2\x96\xB3"
 	pass="${green}\xE2\x9C\x93"
 	fail="${red}\xE2\x9C\x97"
@@ -41,6 +44,10 @@
 #-------------------------------------------------------------------------------
 # Utils
 #-------------------------------------------------------------------------------
+
+	function command_exists() {
+		type "$1" &> /dev/null ;
+	}
 
 	function __printf(){
 		local text color prefix
@@ -304,6 +311,58 @@
 		fi
 	}
 
+	function fx_meta_set(){
+    local key="$1" data="$2" target="$3" prev next
+    prev="^[#\/\* \-\!\< ]*${key}:[^\n]*"
+    next="##${key}:$data"
+    sed -i.bak "s|${prev}|${next}|" ${target} #&& rm ${target}.bak
+    return $?
+	}
+
+
+	function fx_meta_get(){
+    local target="$1" key="$2"
+    local string=$(grep "^[#\/\* \-\!\<]*$key:" $target | cut "-d:" -f2-) #works
+    echo $string
+	}
+
+	function fx_version(){
+    local target="$1"
+    local version=$(fx_meta_get "$target" "version")
+    #$(grep "^[#\/\* \-\!\<]*version:" $target | cut "-d:" -f2-) #works
+    echo $BASH_SOURCE
+    echo $version
+    #local semvar=(${version//[.-]/ }) #with labels
+
+    #echo ${semvar[@]};
+    meta_date
+	}
+
+	function meta_date(){
+		local timestamp=$(date "+%a %F %I:%M %p") prev next key data
+		target="$BASH_SOURCE"
+		fx_meta_set "updated" "$timestamp" "$target"; ret=$?
+
+	}
+
+	function meta_bump(){
+		local data=$1
+		target="$BASH_SOURCE"
+		fx_meta_set "version" "$data" "$target"; ret=$?
+	}
+
+
+	function fx_retag(){
+		if command_exists "git"; then
+			git tag -d stable
+			git push origin :refs/tags/stable
+			git tag -a stable -m "auto retagging latest"
+			git push origin --tags
+		else
+			error "Cant find local git command!"
+		fi
+	}
+
 #-------------------------------------------------------------------------------
 # FX API
 #-------------------------------------------------------------------------------
@@ -472,6 +531,8 @@
 				inst*)     api_install;   ret=$?;;
 				unins*)    api_uninstall; ret=$?;;
 				dl)				 fx_vars; fx_download; ret=$?;;
+				vers*) 		 fx_version "./wlux-setup"; ret=$?;;
+				retag)     fx_retag; ret=$?;;
 				*)
 					if [ ! -z "$call" ]; then
 						die "Invalid command $call";
